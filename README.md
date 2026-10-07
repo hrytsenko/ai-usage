@@ -12,7 +12,7 @@ It reads the quotas only through each agent's own CLI, and skips agents that are
 
 ## Install
 
-With [uv](https://docs.astral.sh/uv/) (`winget install astral-sh.uv`), which also fetches Python 3.10+ if it's missing:
+With [uv](https://docs.astral.sh/uv/) (`winget install astral-sh.uv`), which also fetches Python 3.11+ if it's missing:
 
 ```sh
 uv tool install git+https://github.com/hrytsenko/ai-usage          # latest

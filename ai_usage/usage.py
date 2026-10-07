@@ -16,7 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 from . import __version__
-from .collectors import COLLECTORS, Status
+from .collectors import COLLECTORS, Level, Status
 
 WINDOWS = ["session", "week"]  # Result attributes, in display order
 
@@ -24,7 +24,7 @@ BAR_WIDTH = 20
 PARTIAL_BLOCKS = " ▏▎▍▌▋▊▉"  # index = eighths of a cell filled
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 GREEN, YELLOW, RED, GRAY, RESET = "\x1b[32m", "\x1b[33m", "\x1b[31m", "\x1b[90m", "\x1b[0m"
-LEVEL_COLORS = {"high": GREEN, "medium": YELLOW, "low": RED, "exhausted": RED}
+LEVEL_COLORS = {Level.HIGH: GREEN, Level.MEDIUM: YELLOW, Level.LOW: RED, Level.EXHAUSTED: RED}
 STATUS_COLORS = {Status.ABSENT: GRAY, Status.LOGGED_OUT: YELLOW, Status.ERROR: RED}
 
 
@@ -88,7 +88,7 @@ def print_table(results, use_color):
     rows = [("AGENT", "STATUS", "WINDOW", "QUOTA", "LEFT", "LEVEL", "RESET")]
     for r in results:
         agent = r.agent
-        status = paint(agent.status.value, STATUS_COLORS.get(agent.status), use_color)
+        status = paint(agent.status, STATUS_COLORS.get(agent.status), use_color)
         if not agent.status.usable:
             rows.append((agent.name, status, agent.error) if agent.error else (agent.name, status))
             continue
@@ -112,7 +112,7 @@ def to_json(results):
 
     out = {}
     for r in results:
-        entry = {"status": r.agent.status.value}
+        entry = {"status": r.agent.status}
         if r.agent.error:
             entry["error"] = r.agent.error
         if r.agent.status.usable:

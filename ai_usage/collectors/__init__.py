@@ -6,8 +6,8 @@ Each is a `base.Collector` that implements detect, fetch and parse; `collect()` 
 from .agy import Antigravity
 from .claude import Claude
 from .codex import Codex
-from .model import Agent, Quota, Result, Status
+from .model import Agent, Level, Quota, Result, Status
 
 COLLECTORS = [Claude(), Codex(), Antigravity()]
 
-__all__ = ["COLLECTORS", "Agent", "Quota", "Result", "Status"]
+__all__ = ["COLLECTORS", "Agent", "Level", "Quota", "Result", "Status"]
