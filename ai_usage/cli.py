@@ -27,18 +27,13 @@ def resolve(name):
     return path
 
 
-def run(name, *args, timeout=TIMEOUT):
-    """Run `<name> <args>` and return the CompletedProcess, whatever its exit code."""
-    return subprocess.run(
+def run(name, *args, timeout=TIMEOUT, check=False):
+    """Run `<name> <args>` and return the CompletedProcess; with check, raise on a non-zero exit."""
+    proc = subprocess.run(
         [resolve(name), *args],
         capture_output=True, text=True, encoding="utf-8", errors="replace",
-        stdin=subprocess.DEVNULL, timeout=timeout,
+        stdin=subprocess.DEVNULL, timeout=timeout, check=False,
     )
-
-
-def run_prompt(name, prompt):
-    """Run `<name> -p <prompt>` and return its stdout, raising on a non-zero exit."""
-    proc = run(name, "-p", prompt)
-    if proc.returncode != 0:
+    if check and proc.returncode != 0:
         raise RuntimeError(f"{name} exited {proc.returncode}: {(proc.stderr or proc.stdout).strip()}")
-    return proc.stdout.strip()
+    return proc

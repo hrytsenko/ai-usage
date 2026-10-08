@@ -9,8 +9,7 @@ fetch:  `agy -p "/usage"`, keeping only the "Gemini Models" limits. Output is ta
 
 from datetime import datetime
 
-from ..cli import find, run_prompt
-
+from ..cli import find, run
 from .base import Collector
 from .model import Quota, Status, clamp_percent
 
@@ -25,7 +24,7 @@ class Antigravity(Collector):
         return Status.INSTALLED if find("agy") else Status.ABSENT
 
     def fetch(self):
-        return run_prompt("agy", "/usage")
+        return run("agy", "-p", "/usage", check=True).stdout.strip()
 
     def parse(self, raw):
         windows = {}
@@ -37,7 +36,7 @@ class Antigravity(Collector):
             key = WINDOW_LABELS.get(label.lower())
             if group.lower() != GROUP or not key:
                 continue
-            resets_at = datetime.fromisoformat(resets.replace("Z", "+00:00")) if resets else None
+            resets_at = datetime.fromisoformat(resets) if resets else None
             windows[key] = Quota(left=clamp_percent(float(remaining.rstrip("%"))), reset=resets_at)
         if not windows:
             raise RuntimeError(f"no Gemini Models limits in agy /usage output:\n{raw}")

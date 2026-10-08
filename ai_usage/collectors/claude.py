@@ -8,10 +8,10 @@ fetch:  `claude -p "/usage"`, whose relevant lines look like:
 
 import json
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from ..cli import DETECT_TIMEOUT, find, run, run_prompt
-
+from ..cli import DETECT_TIMEOUT, find, run
 from .base import Collector
 from .model import Quota, Status, clamp_percent
 
@@ -22,6 +22,7 @@ LINE_RE = re.compile(
     r"(?:\s*\((?P<tz>[^)]+)\))?)?",
     re.MULTILINE | re.IGNORECASE,
 )
+MONTHS = ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
 
 
 class Claude(Collector):
@@ -38,7 +39,7 @@ class Claude(Collector):
         return Status.LOGGED_IN if logged_in else Status.LOGGED_OUT
 
     def fetch(self):
-        return run_prompt("claude", "/usage")
+        return run("claude", "-p", "/usage", check=True).stdout.strip()
 
     def parse(self, raw):
         windows = {}
@@ -55,9 +56,8 @@ def _zone(name):
     if not name:
         return None
     try:
-        from zoneinfo import ZoneInfo
         return ZoneInfo(name)
-    except Exception:
+    except (ZoneInfoNotFoundError, ValueError):  # unknown zone, no tz database, or a malformed name
         return None
 
 
@@ -69,10 +69,10 @@ def _parse_reset(m):
     minute = int(m["minute"] or 0)
     tz = _zone(m["tz"])
     # Work in naive wall-clock time of the reported zone, then attach it once the date is known.
-    now = datetime.now(tz).replace(tzinfo=None) if tz else datetime.now()
+    now = datetime.now(tz).replace(tzinfo=None)  # tz=None gives local time, already naive
 
     if m["month"]:
-        month = datetime.strptime(m["month"].title(), "%b").month
+        month = MONTHS.index(m["month"].lower()) + 1
         reset = now.replace(month=month, day=int(m["day"]), hour=hour, minute=minute, second=0, microsecond=0)
         if reset < now - timedelta(days=1):  # no year in the output: a date long past means next year
             reset = reset.replace(year=reset.year + 1)
@@ -83,4 +83,4 @@ def _parse_reset(m):
     # Without a tz database, assume Claude printed the reset in the machine's own zone;
     # astimezone() on a naive datetime applies the local offset (DST included) for that date.
     aware = reset.replace(tzinfo=tz) if tz else reset.astimezone()
-    return aware.astimezone(timezone.utc)
+    return aware.astimezone(UTC)

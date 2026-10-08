@@ -57,8 +57,8 @@ def enable_color():
     return True
 
 
-def paint(text, code, use_color):
-    return f"{code}{text}{RESET}" if use_color and code else text
+def paint(text, color, use_color):
+    return f"{color}{text}{RESET}" if use_color and color else text
 
 
 def fmt_bar(quota, use_color):
@@ -98,9 +98,9 @@ def print_table(results, use_color):
             if quota is None:
                 rows.append((*lead, window, "", "-", "n/a", "-"))
                 continue
-            code = LEVEL_COLORS[quota.level]
-            rows.append((*lead, window, fmt_bar(quota, use_color), paint(f"{quota.left}%", code, use_color),
-                         paint(quota.level, code, use_color), fmt_reset(quota.reset)))
+            color = LEVEL_COLORS[quota.level]
+            rows.append((*lead, window, fmt_bar(quota, use_color), paint(f"{quota.left}%", color, use_color),
+                         paint(quota.level, color, use_color), fmt_reset(quota.reset)))
     print_rows(rows, right_aligned={4})  # LEFT
 
 

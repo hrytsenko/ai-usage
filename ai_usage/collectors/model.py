@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 
-LOW_THRESHOLD = 15  # percent left at or below which a quota counts as low
-MEDIUM_THRESHOLD = 40  # percent left at or below which a quota counts as medium
+LOW_THRESHOLD = 15  # percent left below which a quota counts as low
+MEDIUM_THRESHOLD = 40  # percent left below which a quota counts as medium
 
 
 class Status(StrEnum):
@@ -51,9 +51,9 @@ class Quota:
         """The level by percent left."""
         if self.left <= 0:
             return Level.EXHAUSTED
-        if self.left <= LOW_THRESHOLD:
+        if self.left < LOW_THRESHOLD:
             return Level.LOW
-        if self.left <= MEDIUM_THRESHOLD:
+        if self.left < MEDIUM_THRESHOLD:
             return Level.MEDIUM
         return Level.HIGH
 

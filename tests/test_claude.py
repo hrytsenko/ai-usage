@@ -1,7 +1,7 @@
 """Claude Code: parsing `claude -p "/usage"` output."""
 
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from unittest import mock
 
 from ai_usage.collectors.claude import Claude
@@ -31,7 +31,7 @@ class CapturedNow(datetime):
 
     @classmethod
     def now(cls, tz=None):
-        return datetime(2026, 10, 6, 16, 0, tzinfo=timezone.utc).astimezone(tz)
+        return datetime(2026, 10, 6, 16, 0, tzinfo=UTC).astimezone(tz)
 
 
 class ParseTest(unittest.TestCase):

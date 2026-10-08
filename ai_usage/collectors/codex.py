@@ -7,10 +7,9 @@ fetch:  rate limits from `codex app-server` over JSON-RPC on stdio.
 import json
 import subprocess
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from ..cli import DETECT_TIMEOUT, TIMEOUT, find, resolve, run
-
 from .base import Collector
 from .model import Quota, Status, clamp_percent
 
@@ -84,5 +83,5 @@ def _quota(window):
     resets_at = window.get("resetsAt")
     return Quota(
         left=clamp_percent(100 - window["usedPercent"]),
-        reset=datetime.fromtimestamp(resets_at, tz=timezone.utc) if resets_at else None,
+        reset=datetime.fromtimestamp(resets_at, tz=UTC) if resets_at else None,
     )

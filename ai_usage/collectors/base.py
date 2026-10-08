@@ -30,22 +30,17 @@ class Collector(ABC):
 
     def collect(self) -> Result:
         """Run detect, fetch and parse, stopping early if the agent isn't usable or a step raises."""
+        step = "detect"
         try:
             status = self.detect()
-        except Exception as e:
-            return self._failed("detect", e)
-        if not status.usable:
-            return Result(Agent(self.NAME, status))
-
-        try:
+            if not status.usable:
+                return Result(Agent(self.NAME, status))
+            step = "fetch"
             raw = self.fetch()
-        except Exception as e:
-            return self._failed("fetch", e)
-
-        try:
+            step = "parse"
             session, week = self.parse(raw)
-        except Exception as e:
-            return self._failed("parse", e)
+        except Exception as e:  # noqa: BLE001 - whatever a step raises becomes the agent's ERROR row
+            return self._failed(step, e)
         return Result(Agent(self.NAME, status), session, week)
 
     def _failed(self, step, e):

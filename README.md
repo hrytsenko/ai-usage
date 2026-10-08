@@ -56,8 +56,8 @@ Claude Code  logged in  session  ██████████████▋�
                         week     ██▍░░░░░░░░░░░░░░░░░   12%  low     Fri Oct 09 16:50 (in 2d 23h)
 Codex        logged in  session  ██████░░░░░░░░░░░░░░   30%  medium  Tue Oct 06 17:50 (in 0h 59m)
                         week     ███████████████████▋   98%  high    Sat Oct 10 11:04 (in 3d 18h)
-Antigravity  error      fetch: agy exited 1: not logged in
+Antigravity  absent
 ```
 
 STATUS is `absent`, `installed` (login can't be checked), `logged in`, `logged out` or `error` (with the failed step and reason).
-LEVEL is `high` above 40% left (green), `medium` at 16–40% (yellow), `low` at 1–15% and `exhausted` at 0% (both red).
+LEVEL is `high` from 40% left (green), `medium` from 15% (yellow), `low` above 0% and `exhausted` at 0% (both red).
