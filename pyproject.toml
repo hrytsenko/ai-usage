@@ -11,6 +11,9 @@ Repository = "https://github.com/hrytsenko/ai-usage"
 [project.scripts]
 ai-usage = "ai_usage.usage:main"
 
+[dependency-groups]
+dev = ["ruff==0.16.8"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

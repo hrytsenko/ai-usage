@@ -12,21 +12,13 @@ It reads the quotas only through each agent's own CLI, and skips agents that are
 
 ## Install
 
-With [uv](https://docs.astral.sh/uv/) (`winget install astral-sh.uv`), which also fetches Python 3.11+ if it's missing:
+With [uv](https://docs.astral.sh/uv/):
 
 ```sh
-uv tool install git+https://github.com/hrytsenko/ai-usage          # latest
-uv tool install git+https://github.com/hrytsenko/ai-usage@v0.1.0   # a release tag
+uv tool install git+https://github.com/hrytsenko/ai-usage  # install
+uv tool upgrade ai-usage                                   # update
+uv tool uninstall ai-usage                                 # remove
 ```
-
-This puts `ai-usage.exe` in `%USERPROFILE%\.local\bin`; run `uv tool update-shell` once if that folder isn't on your `PATH`.
-
-```sh
-uv tool upgrade ai-usage     # update
-uv tool uninstall ai-usage   # remove
-```
-
-`pipx install git+https://github.com/hrytsenko/ai-usage` and `pipx upgrade ai-usage` work the same way.
 
 ## Run
 
@@ -39,14 +31,12 @@ ai-usage --version
 ## Develop
 
 ```sh
-uv tool install --editable .   # ai-usage runs this checkout, so edits apply without reinstalling
-python -m ai_usage             # or run it without installing
-python -m unittest             # tests
+uv run ruff check          # lint
+uv run python -m unittest  # test
+uv run python -m ai_usage  # run
 ```
 
-To release, bump `__version__` in [ai_usage/\_\_init\_\_.py](ai_usage/__init__.py), commit, and tag it (`git tag v0.2.0 && git push --tags`).
-
-The tests in [tests/](tests/) parse real outputs captured from each CLI, so they also show what each one prints.
+The tests parse real outputs captured from each CLI, so they also show what each one prints.
 
 ## Output
 
@@ -59,5 +49,5 @@ Codex        logged in  session  ██████░░░░░░░░░�
 Antigravity  absent
 ```
 
-STATUS is `absent`, `installed` (login can't be checked), `logged in`, `logged out` or `error` (with the failed step and reason).
+STATUS is `absent`, `installed` (when login can't be checked), `logged in`, `logged out` or `error` (with the failed step and reason).
 LEVEL is `high` from 40% left (green), `medium` from 15% (yellow), `low` above 0% and `exhausted` at 0% (both red).
