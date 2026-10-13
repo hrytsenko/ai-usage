@@ -21,65 +21,85 @@ from .collectors import COLLECTORS, Level, Status
 WINDOWS = ["session", "week"]  # Result attributes, in display order
 
 BAR_WIDTH = 20
-ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
-GREEN, YELLOW, RED, GRAY, RESET = "\x1b[32m", "\x1b[33m", "\x1b[31m", "\x1b[90m", "\x1b[0m"
-LEVEL_COLORS = {Level.HIGH: GREEN, Level.MEDIUM: YELLOW, Level.LOW: RED, Level.EXHAUSTED: RED}
-STATUS_COLORS = {Status.ABSENT: GRAY, Status.LOGGED_OUT: YELLOW, Status.ERROR: RED}
 
 
-def format_reset(dt, now=None, tz=None):
-    """Format a reset time in local time, e.g. `Tue Oct 06 19:50 (in 2h 59m)`.
+class Resets:
+    """Reset times in local time and relative to now; tz=None means the system time zone."""
 
-    now and tz default to the current time and the system time zone.
-    """
-    if dt is None:
-        return "-"
-    dt = dt.astimezone(tz)
-    delta = dt - (now or datetime.now().astimezone())
-    mins = max(0, int(delta.total_seconds() // 60))
-    days, rem = divmod(mins, 24 * 60)
-    hours, mins = divmod(rem, 60)
-    relative = f"{days}d {hours}h" if days else f"{hours}h {mins:02d}m"
-    return f"{dt:%a %b %d %H:%M} (in {relative})"
+    def __init__(self, now, tz=None):
+        self.now = now
+        self.tz = tz
+
+    @classmethod
+    def for_system(cls):
+        """Relative to the current time, in the system time zone."""
+        return cls(datetime.now().astimezone())
+
+    def format(self, dt):
+        """Format a reset time, e.g. `Tue Oct 06 19:50 (in 2h 59m)`."""
+        if dt is None:
+            return "-"
+        dt = dt.astimezone(self.tz)
+        mins = max(0, int((dt - self.now).total_seconds() // 60))
+        days, rem = divmod(mins, 24 * 60)
+        hours, mins = divmod(rem, 60)
+        relative = f"{days}d {hours}h" if days else f"{hours}h {mins:02d}m"
+        return f"{dt:%a %b %d %H:%M} (in {relative})"
 
 
-def enable_color():
-    """Return True when stdout is a terminal that can show ANSI colors (honours NO_COLOR)."""
-    if os.environ.get("NO_COLOR") or not sys.stdout.isatty():
-        return False
-    if os.name == "nt":
-        # Turn on ENABLE_VIRTUAL_TERMINAL_PROCESSING; Windows Terminal has it on already, classic conhost doesn't.
-        import ctypes
-        kernel32 = ctypes.windll.kernel32
-        handle = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
-        mode = ctypes.c_uint32()
-        if not kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+class Colors:
+    """ANSI colors for terminal text; when disabled, text stays plain."""
+
+    GREEN, YELLOW, RED, GRAY, RESET = "\x1b[32m", "\x1b[33m", "\x1b[31m", "\x1b[90m", "\x1b[0m"
+    ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+    def __init__(self, enabled):
+        self.enabled = enabled
+
+    @classmethod
+    def for_stdout(cls):
+        """Enabled when stdout is a terminal that can show ANSI colors (honours NO_COLOR)."""
+        return cls(cls._stdout_supports_ansi())
+
+    @staticmethod
+    def _stdout_supports_ansi():
+        if os.environ.get("NO_COLOR") or not sys.stdout.isatty():
             return False
-        return bool(kernel32.SetConsoleMode(handle, mode.value | 0x0004))
+        if os.name == "nt":
+            # Turn on ENABLE_VIRTUAL_TERMINAL_PROCESSING; Windows Terminal has it on already, classic conhost doesn't.
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            handle = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
+            mode = ctypes.c_uint32()
+            if not kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+                return False
+            return bool(kernel32.SetConsoleMode(handle, mode.value | 0x0004))
+        return True
+
+    @classmethod
+    def strip(cls, text):
+        """Remove ANSI color codes, leaving the text as it shows on screen."""
+        return cls.ANSI_RE.sub("", text)
+
+    def paint(self, text, color):
+        return f"{color}{text}{self.RESET}" if self.enabled and color else text
 
 
-def format_ansi(text, color):
-    return f"{color}{text}{RESET}" if color else text
+LEVEL_COLORS = {Level.HIGH: Colors.GREEN, Level.MEDIUM: Colors.YELLOW, Level.LOW: Colors.RED, Level.EXHAUSTED: Colors.RED}
+STATUS_COLORS = {Status.ABSENT: Colors.GRAY, Status.LOGGED_OUT: Colors.YELLOW, Status.ERROR: Colors.RED}
 
 
-def format_plain(text, _):
-    return text
-
-
-def format_bar(quota, format_color):
+def format_bar(quota, colors):
     """A bar of the percent left, e.g. `███████████████░░░░░`, colored by level."""
-    full = round(quota.left / 100 * BAR_WIDTH)
-    filled = "█" * full
-    track = "░" * (BAR_WIDTH - full)
-    return f"{format_color(filled, LEVEL_COLORS[quota.level])}{format_color(track, GRAY)}"
-
-
-def visible_len(text):
-    return len(ANSI_RE.sub("", text))
+    left = round(quota.left / 100 * BAR_WIDTH)
+    return colors.paint("█" * left + "░" * (BAR_WIDTH - left), LEVEL_COLORS[quota.level])
 
 
 def print_rows(rows, right_aligned=()):
     """Print rows as aligned columns. A row may have fewer cells; its last cell is never padded."""
+    def visible_len(text):
+        return len(Colors.strip(text))
+
     widths = [max((visible_len(r[i]) for r in rows if i < len(r) - 1), default=0) for i in range(max(map(len, rows)))]
     for row in rows:
         cells = []
@@ -89,12 +109,12 @@ def print_rows(rows, right_aligned=()):
         print("  ".join([*cells, row[-1]]))
 
 
-def print_table(results, format_color, format_reset):
-    """Print results as a table; format_color(text, color) colors a cell and format_reset(dt) formats a reset."""
+def print_table(results, colors, resets):
+    """Print results as a table, with cells painted by colors and reset times formatted by resets."""
     rows = [("AGENT", "STATUS", "WINDOW", "QUOTA", "LEFT", "LEVEL", "RESET")]
     for r in results:
         agent = r.agent
-        status = format_color(agent.status, STATUS_COLORS.get(agent.status))
+        status = colors.paint(agent.status, STATUS_COLORS.get(agent.status))
         if not agent.status.usable:
             rows.append((agent.name, status, agent.error) if agent.error else (agent.name, status))
             continue
@@ -105,8 +125,8 @@ def print_table(results, format_color, format_reset):
                 rows.append((*lead, window, "", "-", "n/a", "-"))
                 continue
             color = LEVEL_COLORS[quota.level]
-            rows.append((*lead, window, format_bar(quota, format_color), format_color(f"{quota.left}%", color),
-                         format_color(quota.level, color), format_reset(quota.reset)))
+            rows.append((*lead, window, format_bar(quota, colors), colors.paint(f"{quota.left}%", color),
+                         colors.paint(quota.level, color), resets.format(quota.reset)))
     print_rows(rows, right_aligned={4})  # LEFT
 
 
@@ -142,7 +162,7 @@ def main():
     if args.json:
         print_json(results)
     else:
-        print_table(results, format_ansi if enable_color() else format_plain, format_reset)
+        print_table(results, Colors.for_stdout(), Resets.for_system())
 
     ok = any(r.agent.status.usable for r in results)
     failed = any(r.agent.status is Status.ERROR for r in results)

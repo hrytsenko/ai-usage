@@ -4,15 +4,13 @@ import contextlib
 import io
 import unittest
 from datetime import datetime, timedelta, timezone
-from functools import partial
 
 from ai_usage.collectors import Agent, Quota, Result, Status
-from ai_usage.usage import ANSI_RE, format_ansi, format_plain, format_reset, print_table
+from ai_usage.usage import Colors, Resets, print_table
 
-# Local time for the test. Fixed, so the output doesn't depend on the machine's time zone.
+# The time zone and current time of the README example, so the table matches it on any machine.
 LOCAL = timezone(timedelta(hours=3))
-
-# When the README example was taken: each reset below is that far ahead, rounded down to the minute.
+# Seconds past the minute: the relative reset times are rounded down, as in the README.
 NOW = datetime(2026, 10, 6, 16, 50, 30, tzinfo=LOCAL)
 
 
@@ -46,22 +44,22 @@ Antigravity  absent
 """
 
 
-def render(format_color):
+def render(colors):
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
-        print_table(RESULTS, format_color, partial(format_reset, now=NOW, tz=LOCAL))
+        print_table(RESULTS, colors, Resets(NOW, LOCAL))
     return out.getvalue()
 
 
 class PrintTableTest(unittest.TestCase):
     def test_plain(self):
-        self.assertEqual(render(format_plain), TABLE)
+        self.assertEqual(render(Colors(enabled=False)), TABLE)
 
-    def test_colors_dont_shift_columns(self):
-        colored = render(format_ansi)
+    def test_colored(self):
+        colored = render(Colors(enabled=True))
 
         self.assertIn("\x1b[", colored)
-        self.assertEqual(ANSI_RE.sub("", colored), TABLE)
+        self.assertEqual(Colors.strip(colored), TABLE)
 
 
 if __name__ == "__main__":
