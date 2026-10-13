@@ -27,12 +27,15 @@ LEVEL_COLORS = {Level.HIGH: GREEN, Level.MEDIUM: YELLOW, Level.LOW: RED, Level.E
 STATUS_COLORS = {Status.ABSENT: GRAY, Status.LOGGED_OUT: YELLOW, Status.ERROR: RED}
 
 
-def fmt_reset(dt):
-    """Format a reset time in local time, e.g. `Tue Oct 06 19:50 (in 2h 59m)`."""
+def format_reset(dt, now=None, tz=None):
+    """Format a reset time in local time, e.g. `Tue Oct 06 19:50 (in 2h 59m)`.
+
+    now and tz default to the current time and the system time zone.
+    """
     if dt is None:
         return "-"
-    dt = dt.astimezone()
-    delta = dt - datetime.now().astimezone()
+    dt = dt.astimezone(tz)
+    delta = dt - (now or datetime.now().astimezone())
     mins = max(0, int(delta.total_seconds() // 60))
     days, rem = divmod(mins, 24 * 60)
     hours, mins = divmod(rem, 60)
@@ -53,19 +56,22 @@ def enable_color():
         if not kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
             return False
         return bool(kernel32.SetConsoleMode(handle, mode.value | 0x0004))
-    return True
 
 
-def paint(text, color, use_color):
-    return f"{color}{text}{RESET}" if use_color and color else text
+def format_ansi(text, color):
+    return f"{color}{text}{RESET}" if color else text
 
 
-def fmt_bar(quota, use_color):
+def format_plain(text, _):
+    return text
+
+
+def format_bar(quota, format_color):
     """A bar of the percent left, e.g. `███████████████░░░░░`, colored by level."""
     full = round(quota.left / 100 * BAR_WIDTH)
     filled = "█" * full
     track = "░" * (BAR_WIDTH - full)
-    return f"{paint(filled, LEVEL_COLORS[quota.level], use_color)}{paint(track, GRAY, use_color)}"
+    return f"{format_color(filled, LEVEL_COLORS[quota.level])}{format_color(track, GRAY)}"
 
 
 def visible_len(text):
@@ -83,11 +89,12 @@ def print_rows(rows, right_aligned=()):
         print("  ".join([*cells, row[-1]]))
 
 
-def print_table(results, use_color):
+def print_table(results, format_color, format_reset):
+    """Print results as a table; format_color(text, color) colors a cell and format_reset(dt) formats a reset."""
     rows = [("AGENT", "STATUS", "WINDOW", "QUOTA", "LEFT", "LEVEL", "RESET")]
     for r in results:
         agent = r.agent
-        status = paint(agent.status, STATUS_COLORS.get(agent.status), use_color)
+        status = format_color(agent.status, STATUS_COLORS.get(agent.status))
         if not agent.status.usable:
             rows.append((agent.name, status, agent.error) if agent.error else (agent.name, status))
             continue
@@ -98,12 +105,12 @@ def print_table(results, use_color):
                 rows.append((*lead, window, "", "-", "n/a", "-"))
                 continue
             color = LEVEL_COLORS[quota.level]
-            rows.append((*lead, window, fmt_bar(quota, use_color), paint(f"{quota.left}%", color, use_color),
-                         paint(quota.level, color, use_color), fmt_reset(quota.reset)))
+            rows.append((*lead, window, format_bar(quota, format_color), format_color(f"{quota.left}%", color),
+                         format_color(quota.level, color), format_reset(quota.reset)))
     print_rows(rows, right_aligned={4})  # LEFT
 
 
-def to_json(results):
+def print_json(results):
     def quota_json(q):
         if q is None:
             return None
@@ -117,7 +124,7 @@ def to_json(results):
         if r.agent.status.usable:
             entry.update(session=quota_json(r.session), week=quota_json(r.week))
         out[r.agent.name] = entry
-    return json.dumps(out, indent=2, ensure_ascii=False)
+    print(json.dumps(out, indent=2, ensure_ascii=False))
 
 
 def main():
@@ -133,9 +140,9 @@ def main():
         results = list(pool.map(lambda c: c.collect(), COLLECTORS))
 
     if args.json:
-        print(to_json(results))
+        print_json(results)
     else:
-        print_table(results, enable_color())
+        print_table(results, format_ansi if enable_color() else format_plain, format_reset)
 
     ok = any(r.agent.status.usable for r in results)
     failed = any(r.agent.status is Status.ERROR for r in results)
