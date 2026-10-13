@@ -21,7 +21,6 @@ from .collectors import COLLECTORS, Level, Status
 WINDOWS = ["session", "week"]  # Result attributes, in display order
 
 BAR_WIDTH = 20
-PARTIAL_BLOCKS = " ▏▎▍▌▋▊▉"  # index = eighths of a cell filled
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 GREEN, YELLOW, RED, GRAY, RESET = "\x1b[32m", "\x1b[33m", "\x1b[31m", "\x1b[90m", "\x1b[0m"
 LEVEL_COLORS = {Level.HIGH: GREEN, Level.MEDIUM: YELLOW, Level.LOW: RED, Level.EXHAUSTED: RED}
@@ -62,10 +61,10 @@ def paint(text, color, use_color):
 
 
 def fmt_bar(quota, use_color):
-    """A bar of the percent left, e.g. `██████████████▌░░░░░`, colored by level."""
-    full, part = divmod(round(quota.left / 100 * BAR_WIDTH * 8), 8)
-    filled = "█" * full + (PARTIAL_BLOCKS[part] if part else "")
-    track = "░" * (BAR_WIDTH - len(filled))
+    """A bar of the percent left, e.g. `███████████████░░░░░`, colored by level."""
+    full = round(quota.left / 100 * BAR_WIDTH)
+    filled = "█" * full
+    track = "░" * (BAR_WIDTH - full)
     return f"{paint(filled, LEVEL_COLORS[quota.level], use_color)}{paint(track, GRAY, use_color)}"
 
 
