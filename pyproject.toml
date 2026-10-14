@@ -9,7 +9,7 @@ dynamic = ["version"]
 Repository = "https://github.com/hrytsenko/ai-usage"
 
 [project.scripts]
-ai-usage = "ai_usage.usage:main"
+ai-usage = "ai_usage.app:main"
 
 [dependency-groups]
 dev = ["ruff==0.16.8"]

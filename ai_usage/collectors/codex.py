@@ -1,8 +1,4 @@
-"""Codex collector.
-
-detect: `codex login status` prints e.g. "Logged in using ChatGPT".
-fetch:  rate limits from `codex app-server` over JSON-RPC on stdio.
-"""
+"""Codex collector."""
 
 import json
 import subprocess
@@ -29,6 +25,7 @@ class Codex(Collector):
     NAME = "Codex"
 
     def detect(self):
+        """Check `codex login status`, which prints e.g. "Logged in using ChatGPT"."""
         if not find("codex"):
             return Status.ABSENT
         proc = run("codex", "login", "status", timeout=DETECT_TIMEOUT)
@@ -37,6 +34,7 @@ class Codex(Collector):
         return Status.LOGGED_IN if logged_in else Status.LOGGED_OUT
 
     def fetch(self):
+        """Read rate limits from `codex app-server` over JSON-RPC on stdio."""
         proc = subprocess.Popen(
             [resolve("codex"), "app-server", "--listen", "stdio://"],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
@@ -66,6 +64,7 @@ class Codex(Collector):
             proc.wait()
 
     def parse(self, raw):
+        """Read the 5-hour and weekly windows of the "codex" bucket."""
         # Only the main "codex" bucket; "rateLimits" is its backward-compatible single-bucket copy.
         snap = (raw.get("rateLimitsByLimitId") or {}).get("codex") or raw.get("rateLimits")
         if not snap:

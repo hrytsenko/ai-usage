@@ -59,7 +59,7 @@ class Quota:
 
 
 @dataclass
-class Result:
+class Usage:
     """The agent and its session (5-hour) and weekly quotas (None when not read or not reported)."""
 
     agent: Agent

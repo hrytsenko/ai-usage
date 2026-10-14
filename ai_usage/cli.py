@@ -1,8 +1,4 @@
-"""Helpers for invoking agent CLIs, shared by the collectors.
-
-Arguments go straight to CreateProcess, so Git Bash never gets a chance to
-rewrite "/usage" into a Windows path.
-"""
+"""Helpers for invoking agent CLIs, shared by the collectors."""
 
 import shutil
 import subprocess
@@ -12,10 +8,8 @@ DETECT_TIMEOUT = 30  # seconds for a login status check
 
 
 def find(name):
-    """Return the CLI's path, or None if it's not on PATH.
-
-    shutil.which picks up .exe/.cmd shims on Windows (e.g. npm's codex.cmd).
-    """
+    """Return the CLI's path, or None if it's not on PATH."""
+    # Windows: also finds .exe/.cmd shims, e.g. npm's codex.cmd.
     return shutil.which(name)
 
 
@@ -29,6 +23,7 @@ def resolve(name):
 
 def run(name, *args, timeout=TIMEOUT, check=False):
     """Run `<name> <args>` and return the CompletedProcess; with check, raise on a non-zero exit."""
+    # Windows: args go straight to CreateProcess, so Git Bash can't rewrite "/usage" into a path.
     proc = subprocess.run(
         [resolve(name), *args],
         capture_output=True, text=True, encoding="utf-8", errors="replace",

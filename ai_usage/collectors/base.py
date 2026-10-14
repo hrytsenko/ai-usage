@@ -1,8 +1,8 @@
-"""The pattern every collector follows: detect the agent, fetch its quota data, parse it."""
+"""The pattern every collector follows: detect the agent, fetch its quota data, and parse it."""
 
 from abc import ABC, abstractmethod
 
-from .model import Agent, Quota, Result, Status
+from .model import Agent, Quota, Status, Usage
 
 
 def error_line(e):
@@ -28,20 +28,20 @@ class Collector(ABC):
     def parse(self, raw) -> tuple[Quota | None, Quota | None]:
         """Turn the raw response into (session, week) quotas, raising if neither is found."""
 
-    def collect(self) -> Result:
+    def collect(self) -> Usage:
         """Run detect, fetch and parse, stopping early if the agent isn't usable or a step raises."""
         step = "detect"
         try:
             status = self.detect()
             if not status.usable:
-                return Result(Agent(self.NAME, status))
+                return Usage(Agent(self.NAME, status))
             step = "fetch"
             raw = self.fetch()
             step = "parse"
             session, week = self.parse(raw)
         except Exception as e:  # noqa: BLE001 - whatever a step raises becomes the agent's ERROR row
             return self._failed(step, e)
-        return Result(Agent(self.NAME, status), session, week)
+        return Usage(Agent(self.NAME, status), session, week)
 
     def _failed(self, step, e):
-        return Result(Agent(self.NAME, Status.ERROR, error=f"{step}: {error_line(e)}"))
+        return Usage(Agent(self.NAME, Status.ERROR, error=f"{step}: {error_line(e)}"))

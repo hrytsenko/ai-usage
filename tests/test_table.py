@@ -1,16 +1,16 @@
-"""The table printed by `ai-usage`."""
+"""The table printed by the app."""
 
 import contextlib
 import io
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from ai_usage.collectors import Agent, Quota, Result, Status
-from ai_usage.usage import Colors, Resets, print_table
+from ai_usage.app import Colors, Resets, print_table
+from ai_usage.collectors import Agent, Quota, Status, Usage
 
-# The time zone and current time of the README example, so the table matches it on any machine.
+# The time zone and current time of the README example.
 LOCAL = timezone(timedelta(hours=3))
-# Seconds past the minute: the relative reset times are rounded down, as in the README.
+# Seconds past the minute, so the relative reset times are rounded down, as in the README.
 NOW = datetime(2026, 10, 6, 16, 50, 30, tzinfo=LOCAL)
 
 
@@ -20,18 +20,18 @@ def reset_at(day, hour, minute):
 
 
 # The example in the README.
-RESULTS = [
-    Result(
+USAGES = [
+    Usage(
         Agent("Claude Code", Status.LOGGED_IN),
         session=Quota(73, reset_at(6, 19, 50)),
         week=Quota(12, reset_at(9, 16, 50)),
     ),
-    Result(
+    Usage(
         Agent("Codex", Status.LOGGED_IN),
         session=Quota(30, reset_at(6, 17, 50)),
         week=Quota(98, reset_at(10, 11, 4)),
     ),
-    Result(Agent("Antigravity", Status.ABSENT)),
+    Usage(Agent("Antigravity", Status.ABSENT)),
 ]
 
 TABLE = """\
@@ -47,7 +47,7 @@ Antigravity  absent
 def render(colors):
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
-        print_table(RESULTS, colors, Resets(NOW, LOCAL))
+        print_table(USAGES, colors, Resets(NOW, LOCAL))
     return out.getvalue()
 
 

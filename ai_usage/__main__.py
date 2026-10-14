@@ -1,5 +1,5 @@
 """Run as `python -m ai_usage`."""
 
-from .usage import main
+from .app import main
 
 main()

@@ -1,13 +1,13 @@
 """Quota collectors, one per agent CLI.
 
-Each is a `base.Collector` that implements detect, fetch and parse; `collect()` runs them and returns a `Result`.
+Each is a `base.Collector` that implements detect, fetch and parse; `collect()` runs them and returns a `Usage`.
 """
 
 from .agy import Antigravity
 from .claude import Claude
 from .codex import Codex
-from .model import Agent, Level, Quota, Result, Status
+from .model import Agent, Level, Quota, Status, Usage
 
 COLLECTORS = [Claude(), Codex(), Antigravity()]
 
-__all__ = ["COLLECTORS", "Agent", "Level", "Quota", "Result", "Status"]
+__all__ = ["COLLECTORS", "Agent", "Level", "Quota", "Status", "Usage"]

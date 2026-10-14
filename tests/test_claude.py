@@ -1,4 +1,4 @@
-"""Claude Code: parsing `claude -p "/usage"` output."""
+"""Parsing of Claude Code output."""
 
 import unittest
 from datetime import UTC, datetime, timedelta, timezone
@@ -6,7 +6,8 @@ from unittest import mock
 
 from ai_usage.collectors.claude import Claude
 
-# Real `claude -p "/usage"` output. Only the "Current session" and "Current week (all models)" lines matter.
+# Real `claude -p "/usage"` output.
+# Only the "Current session" and "Current week" lines matter.
 OUTPUT = """\
 You are currently using your subscription to power your Claude Code usage
 

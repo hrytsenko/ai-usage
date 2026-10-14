@@ -18,7 +18,7 @@ from datetime import datetime
 from . import __version__
 from .collectors import COLLECTORS, Level, Status
 
-WINDOWS = ["session", "week"]  # Result attributes, in display order
+WINDOWS = ["session", "week"]  # Usage attributes, in display order
 
 BAR_WIDTH = 20
 
@@ -90,7 +90,7 @@ STATUS_COLORS = {Status.ABSENT: Colors.GRAY, Status.LOGGED_OUT: Colors.YELLOW, S
 
 
 def format_bar(quota, colors):
-    """A bar of the percent left, e.g. `███████████████░░░░░`, colored by level."""
+    """Format a bar of the percent left, e.g. `███████████████░░░░░`, colored by level."""
     left = round(quota.left / 100 * BAR_WIDTH)
     return colors.paint("█" * left + "░" * (BAR_WIDTH - left), LEVEL_COLORS[quota.level])
 
@@ -109,17 +109,17 @@ def print_rows(rows, right_aligned=()):
         print("  ".join([*cells, row[-1]]))
 
 
-def print_table(results, colors, resets):
-    """Print results as a table, with cells painted by colors and reset times formatted by resets."""
+def print_table(usages, colors, resets):
+    """Print usages as a table, with cells painted by colors and reset times formatted by resets."""
     rows = [("AGENT", "STATUS", "WINDOW", "QUOTA", "LEFT", "LEVEL", "RESET")]
-    for r in results:
-        agent = r.agent
+    for u in usages:
+        agent = u.agent
         status = colors.paint(agent.status, STATUS_COLORS.get(agent.status))
         if not agent.status.usable:
             rows.append((agent.name, status, agent.error) if agent.error else (agent.name, status))
             continue
         for i, window in enumerate(WINDOWS):
-            quota = getattr(r, window)
+            quota = getattr(u, window)
             lead = (agent.name, status) if i == 0 else ("", "")
             if quota is None:
                 rows.append((*lead, window, "", "-", "n/a", "-"))
@@ -130,20 +130,20 @@ def print_table(results, colors, resets):
     print_rows(rows, right_aligned={4})  # LEFT
 
 
-def print_json(results):
+def print_json(usages):
     def quota_json(q):
         if q is None:
             return None
         return {"level": q.level, "left": q.left, "reset": q.reset.isoformat() if q.reset else None}
 
     out = {}
-    for r in results:
-        entry = {"status": r.agent.status}
-        if r.agent.error:
-            entry["error"] = r.agent.error
-        if r.agent.status.usable:
-            entry.update(session=quota_json(r.session), week=quota_json(r.week))
-        out[r.agent.name] = entry
+    for u in usages:
+        entry = {"status": u.agent.status}
+        if u.agent.error:
+            entry["error"] = u.agent.error
+        if u.agent.status.usable:
+            entry.update(session=quota_json(u.session), week=quota_json(u.week))
+        out[u.agent.name] = entry
     print(json.dumps(out, indent=2, ensure_ascii=False))
 
 
@@ -157,14 +157,14 @@ def main():
     sys.stdout.reconfigure(encoding="utf-8")
 
     with ThreadPoolExecutor(len(COLLECTORS)) as pool:
-        results = list(pool.map(lambda c: c.collect(), COLLECTORS))
+        usages = list(pool.map(lambda c: c.collect(), COLLECTORS))
 
     if args.json:
-        print_json(results)
+        print_json(usages)
     else:
-        print_table(results, Colors.for_stdout(), Resets.for_system())
+        print_table(usages, Colors.for_stdout(), Resets.for_system())
 
-    ok = any(r.agent.status.usable for r in results)
-    failed = any(r.agent.status is Status.ERROR for r in results)
+    ok = any(u.agent.status.usable for u in usages)
+    failed = any(u.agent.status is Status.ERROR for u in usages)
     sys.exit(0 if ok and not failed else 1)
 

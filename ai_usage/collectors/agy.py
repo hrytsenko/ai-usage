@@ -1,11 +1,4 @@
-"""Antigravity collector.
-
-detect: agy has no login status command, so only installation is checked.
-fetch:  `agy -p "/usage"`, keeping only the "Gemini Models" limits. Output is tab-separated, one window per line:
-    Gemini Models	Weekly Limit Remaining	99%	2026-10-09T16:34:43Z
-    Gemini Models	Five Hour Limit Remaining	100%	2026-10-05T19:58:09Z
-    Claude and GPT models	Weekly Limit Remaining	100%	2026-10-12T14:58:30Z
-"""
+"""Antigravity collector."""
 
 from datetime import datetime
 
@@ -21,12 +14,15 @@ class Antigravity(Collector):
     NAME = "Antigravity"
 
     def detect(self):
+        """Check installation only: agy has no login status command."""
         return Status.INSTALLED if find("agy") else Status.ABSENT
 
     def fetch(self):
+        """Run `agy -p "/usage"`."""
         return run("agy", "-p", "/usage", check=True).stdout.strip()
 
     def parse(self, raw):
+        """Read the "Gemini Models" limits from tab-separated output, one window per line."""
         windows = {}
         for line in raw.splitlines():
             parts = [p.strip() for p in line.split("\t")]

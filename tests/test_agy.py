@@ -1,10 +1,10 @@
-"""Antigravity: parsing `agy -p "/usage"` output."""
+"""Parsing of Antigravity output."""
 
 import unittest
 
 from ai_usage.collectors.agy import Antigravity
 
-# Real `agy -p "/usage"` output: group, window, percent left, reset (UTC).
+# Real `agy -p "/usage"` output.
 # The columns are separated by literal tab characters, as agy prints them.
 OUTPUT = """\
 Gemini Models	Weekly Limit Remaining	99%	2026-10-09T16:34:43Z

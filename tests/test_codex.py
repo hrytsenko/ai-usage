@@ -1,13 +1,12 @@
-"""Codex: parsing the `account/rateLimits/read` result from `codex app-server`."""
+"""Parsing of Codex output."""
 
 import json
 import unittest
 
 from ai_usage.collectors.codex import Codex
 
-# The real app-server reply to the rate-limit request (pretty-printed; account id masked).
-# Each bucket has a 5-hour (300 min) and a weekly (10080 min) window, with resets as Unix timestamps;
-# "rateLimits" repeats the "codex" bucket for older clients.
+# Real Codex app-server reply.
+# Only the 5-hour (300 min) and weekly (10080 min) windows of the "codex" bucket matter.
 REPLY = """\
 {
   "id": 2,

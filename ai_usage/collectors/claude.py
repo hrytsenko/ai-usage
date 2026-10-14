@@ -1,10 +1,4 @@
-"""Claude Code collector.
-
-detect: `claude auth status --json` reports {"loggedIn": true, ...}.
-fetch:  `claude -p "/usage"`, whose relevant lines look like:
-    Current session: 2% used · resets Oct 5, 10:49pm (Europe/Bucharest)
-    Current week (all models): 2% used · resets Oct 10, 2pm (Europe/Bucharest)
-"""
+"""Claude Code collector."""
 
 import json
 import re
@@ -29,6 +23,7 @@ class Claude(Collector):
     NAME = "Claude Code"
 
     def detect(self):
+        """Check `claude auth status --json`, which reports {"loggedIn": true, ...}."""
         if not find("claude"):
             return Status.ABSENT
         proc = run("claude", "auth", "status", "--json", timeout=DETECT_TIMEOUT)
@@ -39,9 +34,11 @@ class Claude(Collector):
         return Status.LOGGED_IN if logged_in else Status.LOGGED_OUT
 
     def fetch(self):
+        """Run `claude -p "/usage"`."""
         return run("claude", "-p", "/usage", check=True).stdout.strip()
 
     def parse(self, raw):
+        """Read the lines that start with "Current session" and "Current week"."""
         windows = {}
         for m in LINE_RE.finditer(raw):
             key = "session" if m["window"].lower() == "session" else "week"
