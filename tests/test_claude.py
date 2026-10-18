@@ -1,7 +1,7 @@
 """Parsing of Claude Code output."""
 
 import unittest
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, datetime
 from unittest import mock
 
 from ai_usage.collectors.claude import Claude
@@ -23,10 +23,6 @@ Last 7d · 460 requests · 32 sessions
   Top plugins: headless-run 6%"""
 
 
-# Europe/Bucharest in October (EEST). Fixed, so the test doesn't need a tz database.
-BUCHAREST = timezone(timedelta(hours=3))
-
-
 class CapturedNow(datetime):
     """Claude prints no year, so the collector infers it from now: pin now to when OUTPUT was captured."""
 
@@ -37,8 +33,7 @@ class CapturedNow(datetime):
 
 class ParseTest(unittest.TestCase):
     @mock.patch("ai_usage.collectors.claude.datetime", CapturedNow)
-    @mock.patch("ai_usage.collectors.claude._zone", return_value=BUCHAREST)
-    def test_reads_session_and_week(self, _zone):
+    def test_reads_session_and_week(self):
         session, week = Claude().parse(OUTPUT)
 
         self.assertEqual(session.left, 92)  # 8% used

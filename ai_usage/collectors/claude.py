@@ -49,7 +49,7 @@ class Claude(Collector):
 
 
 def _zone(name):
-    """Return the named zone, or None when Python has no tz database (e.g. Windows without `tzdata`)."""
+    """Return the named zone, or None when it's unknown or Python has no tz database."""
     if not name:
         return None
     try:
@@ -77,7 +77,7 @@ def _parse_reset(m):
         reset = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
         if reset < now:
             reset += timedelta(days=1)
-    # Without a tz database, assume Claude printed the reset in the machine's own zone;
+    # Without a known zone, assume Claude printed the reset in the machine's own zone;
     # astimezone() on a naive datetime applies the local offset (DST included) for that date.
     aware = reset.replace(tzinfo=tz) if tz else reset.astimezone()
     return aware.astimezone(UTC)
