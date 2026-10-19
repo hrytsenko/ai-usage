@@ -3,7 +3,7 @@
 import unittest
 from unittest import mock
 
-from ai_usage.collectors import Status
+from ai_usage.collectors import Agent, Status
 from ai_usage.collectors.agy import Antigravity
 
 
@@ -15,10 +15,10 @@ def detect(path):
 
 class DetectTest(unittest.TestCase):
     def test_absent(self):
-        self.assertEqual(detect(None), Status.ABSENT)
+        self.assertEqual(detect(None), Agent(Antigravity.NAME, Status.ABSENT, usable=False))
 
     def test_installed(self):
-        self.assertEqual(detect("agy"), Status.INSTALLED)
+        self.assertEqual(detect("agy"), Agent(Antigravity.NAME, Status.INSTALLED, usable=True))
 
 
 # Trimmed `agy -p "/usage"` output.

@@ -5,7 +5,7 @@ import unittest
 from datetime import UTC, datetime
 from unittest import mock
 
-from ai_usage.collectors import Status
+from ai_usage.collectors import Agent, Status
 from ai_usage.collectors.claude import Claude
 
 # Trimmed `claude auth status --json` output when logged in, exit code 0.
@@ -27,13 +27,13 @@ def detect(path, stdout="", returncode=0):
 
 class DetectTest(unittest.TestCase):
     def test_absent(self):
-        self.assertEqual(detect(None), Status.ABSENT)
+        self.assertEqual(detect(None), Agent(Claude.NAME, Status.ABSENT, usable=False))
 
     def test_logged_in(self):
-        self.assertEqual(detect("claude", LOGGED_IN_OUTPUT, 0), Status.LOGGED_IN)
+        self.assertEqual(detect("claude", LOGGED_IN_OUTPUT, 0), Agent(Claude.NAME, Status.LOGGED_IN, usable=True))
 
     def test_logged_out(self):
-        self.assertEqual(detect("claude", LOGGED_OUT_OUTPUT, 1), Status.LOGGED_OUT)
+        self.assertEqual(detect("claude", LOGGED_OUT_OUTPUT, 1), Agent(Claude.NAME, Status.LOGGED_OUT, usable=False))
 
 
 # Trimmed `claude -p "/usage"` output.

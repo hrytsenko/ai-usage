@@ -17,8 +17,8 @@ class Collector(ABC):
     NAME = ""
 
     @abstractmethod
-    def detect(self) -> Status:
-        """Return ABSENT, INSTALLED, LOGGED_IN or LOGGED_OUT."""
+    def detect(self) -> Agent:
+        """Return the agent with its status (ABSENT, INSTALLED, LOGGED_IN or LOGGED_OUT) and whether it's usable."""
 
     @abstractmethod
     def fetch(self):
@@ -32,16 +32,16 @@ class Collector(ABC):
         """Run detect, fetch and parse, stopping early if the agent isn't usable or a step raises."""
         step = "detect"
         try:
-            status = self.detect()
-            if not status.usable:
-                return Usage(Agent(self.NAME, status))
+            agent = self.detect()
+            if not agent.usable:
+                return Usage(agent)
             step = "fetch"
             raw = self.fetch()
             step = "parse"
             session, week = self.parse(raw)
         except Exception as e:  # noqa: BLE001 - whatever a step raises becomes the agent's ERROR row
             return self._failed(step, e)
-        return Usage(Agent(self.NAME, status), session, week)
+        return Usage(agent, session, week)
 
     def _failed(self, step, e):
-        return Usage(Agent(self.NAME, Status.ERROR, error=f"{step}: {error_line(e)}"))
+        return Usage(Agent(self.NAME, Status.ERROR, usable=False), error=f"{step}: {error_line(e)}")

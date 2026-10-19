@@ -22,16 +22,16 @@ def reset_at(day, hour, minute):
 # The example in the README.
 USAGES = [
     Usage(
-        Agent("Claude Code", Status.LOGGED_IN),
+        Agent("Claude Code", Status.LOGGED_IN, usable=True),
         session=Quota(73, reset_at(6, 19, 50)),
         week=Quota(12, reset_at(9, 16, 50)),
     ),
     Usage(
-        Agent("Codex", Status.LOGGED_IN),
+        Agent("Codex", Status.LOGGED_IN, usable=True),
         session=Quota(30, reset_at(6, 17, 50)),
         week=Quota(98, reset_at(10, 11, 4)),
     ),
-    Usage(Agent("Antigravity", Status.ABSENT)),
+    Usage(Agent("Antigravity", Status.ABSENT, usable=False)),
 ]
 
 TABLE = """\

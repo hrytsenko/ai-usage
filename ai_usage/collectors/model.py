@@ -15,12 +15,7 @@ class Status(StrEnum):
     INSTALLED = "installed"  # on PATH; the CLI can't report its login
     LOGGED_IN = "logged in"
     LOGGED_OUT = "logged out"
-    ERROR = "error"  # a step failed; Agent.error says which and why
-
-    @property
-    def usable(self):
-        """Installed, and not known to be logged out."""
-        return self in (Status.INSTALLED, Status.LOGGED_IN)
+    ERROR = "error"  # a step failed; Usage.error says which and why
 
 
 class Level(StrEnum):
@@ -34,9 +29,11 @@ class Level(StrEnum):
 
 @dataclass
 class Agent:
+    """The agent as its collector detected it."""
+
     name: str
     status: Status
-    error: str | None = None  # "<step>: <reason>" when status is ERROR
+    usable: bool  # whether quotas can be read
 
 
 @dataclass
@@ -65,6 +62,7 @@ class Usage:
     agent: Agent
     session: Quota | None = None
     week: Quota | None = None
+    error: str | None = None  # "<step>: <reason>" when the agent's status is ERROR
 
 
 def clamp_percent(value):

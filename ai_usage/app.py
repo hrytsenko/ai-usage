@@ -115,8 +115,8 @@ def print_table(usages, colors, resets):
     for u in usages:
         agent = u.agent
         status = colors.paint(agent.status, STATUS_COLORS.get(agent.status))
-        if not agent.status.usable:
-            rows.append((agent.name, status, agent.error) if agent.error else (agent.name, status))
+        if not agent.usable:
+            rows.append((agent.name, status, u.error) if u.error else (agent.name, status))
             continue
         for i, window in enumerate(WINDOWS):
             quota = getattr(u, window)
@@ -139,9 +139,9 @@ def print_json(usages):
     out = {}
     for u in usages:
         entry = {"status": u.agent.status}
-        if u.agent.error:
-            entry["error"] = u.agent.error
-        if u.agent.status.usable:
+        if u.error:
+            entry["error"] = u.error
+        if u.agent.usable:
             entry.update(session=quota_json(u.session), week=quota_json(u.week))
         out[u.agent.name] = entry
     print(json.dumps(out, indent=2, ensure_ascii=False))
@@ -164,7 +164,7 @@ def main():
     else:
         print_table(usages, Colors.for_stdout(), Resets.for_system())
 
-    ok = any(u.agent.status.usable for u in usages)
+    ok = any(u.agent.usable for u in usages)
     failed = any(u.agent.status is Status.ERROR for u in usages)
     sys.exit(0 if ok and not failed else 1)
 

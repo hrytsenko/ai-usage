@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 
 from ..cli import DETECT_TIMEOUT, TIMEOUT, find, resolve, run
 from .base import Collector
-from .model import Quota, Status, clamp_percent
+from .model import Agent, Quota, Status, clamp_percent
 
 RATE_LIMITS_ID = 2  # request id of the rate-limit read, to pick out its reply
 
@@ -27,11 +27,11 @@ class Codex(Collector):
     def detect(self):
         """Check `codex login status`, which prints e.g. "Logged in using ChatGPT"."""
         if not find("codex"):
-            return Status.ABSENT
+            return Agent(self.NAME, Status.ABSENT, usable=False)
         proc = run("codex", "login", "status", timeout=DETECT_TIMEOUT)
         output = (proc.stdout + proc.stderr).lower()
         logged_in = proc.returncode == 0 and "logged in" in output and "not logged in" not in output
-        return Status.LOGGED_IN if logged_in else Status.LOGGED_OUT
+        return Agent(self.NAME, Status.LOGGED_IN if logged_in else Status.LOGGED_OUT, usable=logged_in)
 
     def fetch(self):
         """Read rate limits from `codex app-server` over JSON-RPC on stdio."""

@@ -4,7 +4,7 @@ from datetime import datetime
 
 from ..cli import find, run
 from .base import Collector
-from .model import Quota, Status, clamp_percent
+from .model import Agent, Quota, Status, clamp_percent
 
 GROUP = "gemini models"
 WINDOW_LABELS = {"five hour limit remaining": "session", "weekly limit remaining": "week"}
@@ -14,8 +14,10 @@ class Antigravity(Collector):
     NAME = "Antigravity"
 
     def detect(self):
-        """Check installation only: agy has no login status command."""
-        return Status.INSTALLED if find("agy") else Status.ABSENT
+        """Check installation only: agy has no login status command, so an installed agy counts as usable."""
+        if not find("agy"):
+            return Agent(self.NAME, Status.ABSENT, usable=False)
+        return Agent(self.NAME, Status.INSTALLED, usable=True)
 
     def fetch(self):
         """Run `agy -p "/usage"`."""

@@ -5,7 +5,7 @@ import subprocess
 import unittest
 from unittest import mock
 
-from ai_usage.collectors import Status
+from ai_usage.collectors import Agent, Status
 from ai_usage.collectors.codex import Codex
 
 # Trimmed `codex login status` output when logged in, exit code 0.
@@ -27,13 +27,13 @@ def detect(path, stderr="", returncode=0):
 
 class DetectTest(unittest.TestCase):
     def test_absent(self):
-        self.assertEqual(detect(None), Status.ABSENT)
+        self.assertEqual(detect(None), Agent(Codex.NAME, Status.ABSENT, usable=False))
 
     def test_logged_in(self):
-        self.assertEqual(detect("codex", LOGGED_IN_OUTPUT, 0), Status.LOGGED_IN)
+        self.assertEqual(detect("codex", LOGGED_IN_OUTPUT, 0), Agent(Codex.NAME, Status.LOGGED_IN, usable=True))
 
     def test_logged_out(self):
-        self.assertEqual(detect("codex", LOGGED_OUT_OUTPUT, 1), Status.LOGGED_OUT)
+        self.assertEqual(detect("codex", LOGGED_OUT_OUTPUT, 1), Agent(Codex.NAME, Status.LOGGED_OUT, usable=False))
 
 
 # Codex app-server reply to the rate-limit read, trimmed to the 5-hour and 7-days windows.

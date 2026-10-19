@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from ..cli import DETECT_TIMEOUT, find, run
 from .base import Collector
-from .model import Quota, Status, clamp_percent
+from .model import Agent, Quota, Status, clamp_percent
 
 LINE_RE = re.compile(
     r"^Current (?P<window>session|week \(all models\)):\s*(?P<used>\d+(?:\.\d+)?)% used"
@@ -25,13 +25,13 @@ class Claude(Collector):
     def detect(self):
         """Check `claude auth status --json`, which reports {"loggedIn": true, ...}."""
         if not find("claude"):
-            return Status.ABSENT
+            return Agent(self.NAME, Status.ABSENT, usable=False)
         proc = run("claude", "auth", "status", "--json", timeout=DETECT_TIMEOUT)
         try:
             logged_in = bool(json.loads(proc.stdout).get("loggedIn"))
         except (json.JSONDecodeError, AttributeError):  # not a JSON object: trust the exit code
             logged_in = proc.returncode == 0
-        return Status.LOGGED_IN if logged_in else Status.LOGGED_OUT
+        return Agent(self.NAME, Status.LOGGED_IN if logged_in else Status.LOGGED_OUT, usable=logged_in)
 
     def fetch(self):
         """Run `claude -p "/usage"`."""
