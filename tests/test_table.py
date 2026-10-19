@@ -6,7 +6,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 
 from ai_usage.app import Colors, Resets, print_table
-from ai_usage.collectors import Agent, Quota, Status, Usage
+from ai_usage.collectors import Agent, Failure, Quota, Status, Usage
 
 # The time zone and current time of the README example.
 LOCAL = timezone(timedelta(hours=3))
@@ -44,10 +44,10 @@ Antigravity  absent
 """
 
 
-def render(colors):
+def render(colors, usages=USAGES):
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
-        print_table(USAGES, colors, Resets(NOW, LOCAL))
+        print_table(usages, colors, Resets(NOW, LOCAL))
     return out.getvalue()
 
 
@@ -60,6 +60,11 @@ class PrintTableTest(unittest.TestCase):
 
         self.assertIn("\x1b[", colored)
         self.assertEqual(Colors.strip(colored), TABLE)
+
+    def test_failure(self):
+        table = render(Colors(enabled=False), [Failure("Codex", "fetch: timed out")])
+
+        self.assertEqual(table.splitlines()[1], "Codex  error   fetch: timed out")
 
 
 if __name__ == "__main__":

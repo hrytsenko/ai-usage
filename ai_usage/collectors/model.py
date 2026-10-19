@@ -9,13 +9,12 @@ MEDIUM_THRESHOLD = 40  # percent left below which a quota counts as medium
 
 
 class Status(StrEnum):
-    """How far a collector got with an agent."""
+    """What detection found about an agent."""
 
     ABSENT = "absent"  # CLI not on PATH
     INSTALLED = "installed"  # on PATH; the CLI can't report its login
     LOGGED_IN = "logged in"
     LOGGED_OUT = "logged out"
-    ERROR = "error"  # a step failed; Usage.error says which and why
 
 
 class Level(StrEnum):
@@ -62,7 +61,14 @@ class Usage:
     agent: Agent
     session: Quota | None = None
     week: Quota | None = None
-    error: str | None = None  # "<step>: <reason>" when the agent's status is ERROR
+
+
+@dataclass
+class Failure:
+    """The agent's quotas couldn't be collected."""
+
+    name: str
+    reason: str
 
 
 def clamp_percent(value):

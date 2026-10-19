@@ -16,11 +16,13 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 from . import __version__
-from .collectors import COLLECTORS, Level, Status
+from .collectors import COLLECTORS, Failure, Level, Status
 
 WINDOWS = ["session", "week"]  # Usage attributes, in display order
 
 BAR_WIDTH = 20
+
+FAILED = "error"  # the status shown for a Failure
 
 
 class Resets:
@@ -86,7 +88,7 @@ class Colors:
 
 
 LEVEL_COLORS = {Level.HIGH: Colors.GREEN, Level.MEDIUM: Colors.YELLOW, Level.LOW: Colors.RED, Level.EXHAUSTED: Colors.RED}
-STATUS_COLORS = {Status.ABSENT: Colors.GRAY, Status.LOGGED_OUT: Colors.YELLOW, Status.ERROR: Colors.RED}
+STATUS_COLORS = {Status.ABSENT: Colors.GRAY, Status.LOGGED_OUT: Colors.YELLOW}
 
 
 def format_bar(quota, colors):
@@ -113,10 +115,13 @@ def print_table(usages, colors, resets):
     """Print usages as a table, with cells painted by colors and reset times formatted by resets."""
     rows = [("AGENT", "STATUS", "WINDOW", "QUOTA", "LEFT", "LEVEL", "RESET")]
     for u in usages:
+        if isinstance(u, Failure):
+            rows.append((u.name, colors.paint(FAILED, Colors.RED), u.reason))
+            continue
         agent = u.agent
         status = colors.paint(agent.status, STATUS_COLORS.get(agent.status))
         if not agent.usable:
-            rows.append((agent.name, status, u.error) if u.error else (agent.name, status))
+            rows.append((agent.name, status))
             continue
         for i, window in enumerate(WINDOWS):
             quota = getattr(u, window)
@@ -138,9 +143,10 @@ def print_json(usages):
 
     out = {}
     for u in usages:
+        if isinstance(u, Failure):
+            out[u.name] = {"status": FAILED, "error": u.reason}
+            continue
         entry = {"status": u.agent.status}
-        if u.error:
-            entry["error"] = u.error
         if u.agent.usable:
             entry.update(session=quota_json(u.session), week=quota_json(u.week))
         out[u.agent.name] = entry
@@ -164,7 +170,6 @@ def main():
     else:
         print_table(usages, Colors.for_stdout(), Resets.for_system())
 
-    ok = any(u.agent.usable for u in usages)
-    failed = any(u.agent.status is Status.ERROR for u in usages)
-    sys.exit(0 if ok and not failed else 1)
+    failed = any(isinstance(u, Failure) for u in usages)
+    sys.exit(1 if failed else 0)
 
