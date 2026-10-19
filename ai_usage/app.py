@@ -80,13 +80,9 @@ class Colors:
 
     @classmethod
     def for_stdout(cls):
-        """Enabled when stdout is a terminal that can show ANSI colors (honours NO_COLOR)."""
-        return cls(cls._stdout_supports_ansi())
-
-    @staticmethod
-    def _stdout_supports_ansi():
+        """Enable colors when stdout is a terminal that can show ANSI colors (honour NO_COLOR)."""
         if os.environ.get("NO_COLOR") or not sys.stdout.isatty():
-            return False
+            return cls(False)
         if os.name == "nt":
             # Turn on ENABLE_VIRTUAL_TERMINAL_PROCESSING; Windows Terminal has it on already, classic conhost doesn't.
             import ctypes
@@ -94,16 +90,17 @@ class Colors:
             handle = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
             mode = ctypes.c_uint32()
             if not kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
-                return False
-            return bool(kernel32.SetConsoleMode(handle, mode.value | 0x0004))
-        return True
+                return cls(False)
+            return cls(bool(kernel32.SetConsoleMode(handle, mode.value | 0x0004)))
+        return cls(True)
 
     @classmethod
     def strip(cls, text):
-        """Remove ANSI color codes, leaving the text as it shows on screen."""
+        """Remove ANSI color codes."""
         return cls.ANSI_RE.sub("", text)
 
     def paint(self, text, color):
+        """Add ANSI color codes when enabled."""
         return f"{color}{text}{self.RESET}" if self.enabled and color else text
 
 
