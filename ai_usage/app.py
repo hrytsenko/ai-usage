@@ -16,13 +16,33 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 from . import __version__
-from .collectors import COLLECTORS, Failure, Level, Status
+from .collectors import COLLECTORS, Failure, Status
 
 WINDOWS = ["session", "week"]  # Usage attributes, in display order
 
 BAR_WIDTH = 20
 
 FAILED = "error"  # the status shown for a Failure
+
+
+class Levels:
+    """How much of a quota is left: low below `low` percent left, medium below `medium`."""
+
+    EXHAUSTED, LOW, MEDIUM, HIGH = "exhausted", "low", "medium", "high"
+
+    def __init__(self, low=15, medium=40):
+        self.low = low
+        self.medium = medium
+
+    def of(self, quota):
+        """The level of a quota by percent left."""
+        if quota.left <= 0:
+            return self.EXHAUSTED
+        if quota.left < self.low:
+            return self.LOW
+        if quota.left < self.medium:
+            return self.MEDIUM
+        return self.HIGH
 
 
 class Resets:
@@ -87,14 +107,8 @@ class Colors:
         return f"{color}{text}{self.RESET}" if self.enabled and color else text
 
 
-LEVEL_COLORS = {Level.HIGH: Colors.GREEN, Level.MEDIUM: Colors.YELLOW, Level.LOW: Colors.RED, Level.EXHAUSTED: Colors.RED}
 STATUS_COLORS = {Status.ABSENT: Colors.GRAY, Status.LOGGED_OUT: Colors.YELLOW}
-
-
-def format_bar(quota, colors):
-    """Format a bar of the percent left, e.g. `███████████████░░░░░`, colored by level."""
-    left = round(quota.left / 100 * BAR_WIDTH)
-    return colors.paint("█" * left + "░" * (BAR_WIDTH - left), LEVEL_COLORS[quota.level])
+LEVEL_COLORS = {Levels.HIGH: Colors.GREEN, Levels.MEDIUM: Colors.YELLOW, Levels.LOW: Colors.RED, Levels.EXHAUSTED: Colors.RED}
 
 
 def print_rows(rows, right_aligned=()):
@@ -111,8 +125,12 @@ def print_rows(rows, right_aligned=()):
         print("  ".join([*cells, row[-1]]))
 
 
-def print_table(usages, colors, resets):
-    """Print usages as a table, with cells painted by colors and reset times formatted by resets."""
+def print_table(usages, levels, colors, resets):
+    """Print usages as a table, with quotas leveled by levels, cells painted by colors and reset times formatted by resets."""
+    def format_bar(quota):
+        left = round(quota.left / 100 * BAR_WIDTH)
+        return "█" * left + "░" * (BAR_WIDTH - left)
+
     rows = [("AGENT", "STATUS", "WINDOW", "QUOTA", "LEFT", "LEVEL", "RESET")]
     for u in usages:
         if isinstance(u, Failure):
@@ -129,17 +147,18 @@ def print_table(usages, colors, resets):
             if quota is None:
                 rows.append((*lead, window, "", "-", "n/a", "-"))
                 continue
-            color = LEVEL_COLORS[quota.level]
-            rows.append((*lead, window, format_bar(quota, colors), colors.paint(f"{quota.left}%", color),
-                         colors.paint(quota.level, color), resets.format(quota.reset)))
+            level = levels.of(quota)
+            color = LEVEL_COLORS[level]
+            rows.append((*lead, window, colors.paint(format_bar(quota), color), colors.paint(f"{quota.left}%", color),
+                         colors.paint(level, color), resets.format(quota.reset)))
     print_rows(rows, right_aligned={4})  # LEFT
 
 
-def print_json(usages):
+def print_json(usages, levels):
     def quota_json(q):
         if q is None:
             return None
-        return {"level": q.level, "left": q.left, "reset": q.reset.isoformat() if q.reset else None}
+        return {"level": levels.of(q), "left": q.left, "reset": q.reset.isoformat() if q.reset else None}
 
     out = {}
     for u in usages:
@@ -165,10 +184,11 @@ def main():
     with ThreadPoolExecutor(len(COLLECTORS)) as pool:
         usages = list(pool.map(lambda c: c.collect(), COLLECTORS))
 
+    levels = Levels()
     if args.json:
-        print_json(usages)
+        print_json(usages, levels)
     else:
-        print_table(usages, Colors.for_stdout(), Resets.for_system())
+        print_table(usages, levels, Colors.for_stdout(), Resets.for_system())
 
     failed = any(isinstance(u, Failure) for u in usages)
     sys.exit(1 if failed else 0)

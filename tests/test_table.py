@@ -5,7 +5,7 @@ import io
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from ai_usage.app import Colors, Resets, print_table
+from ai_usage.app import Colors, Levels, Resets, print_table
 from ai_usage.collectors import Agent, Failure, Quota, Status, Usage
 
 # The time zone and current time of the README example.
@@ -47,7 +47,7 @@ Antigravity  absent
 def render(colors, usages=USAGES):
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
-        print_table(usages, colors, Resets(NOW, LOCAL))
+        print_table(usages, Levels(), colors, Resets(NOW, LOCAL))
     return out.getvalue()
 
 

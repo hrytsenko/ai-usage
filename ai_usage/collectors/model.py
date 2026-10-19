@@ -4,9 +4,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 
-LOW_THRESHOLD = 15  # percent left below which a quota counts as low
-MEDIUM_THRESHOLD = 40  # percent left below which a quota counts as medium
-
 
 class Status(StrEnum):
     """What detection found about an agent."""
@@ -15,15 +12,6 @@ class Status(StrEnum):
     INSTALLED = "installed"  # on PATH; the CLI can't report its login
     LOGGED_IN = "logged in"
     LOGGED_OUT = "logged out"
-
-
-class Level(StrEnum):
-    """How much of a quota is left."""
-
-    EXHAUSTED = "exhausted"
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
 
 
 @dataclass
@@ -41,17 +29,6 @@ class Quota:
 
     left: int  # percent of the limit left: 0 = exhausted, 100 = untouched
     reset: datetime | None  # in UTC
-
-    @property
-    def level(self) -> Level:
-        """The level by percent left."""
-        if self.left <= 0:
-            return Level.EXHAUSTED
-        if self.left < LOW_THRESHOLD:
-            return Level.LOW
-        if self.left < MEDIUM_THRESHOLD:
-            return Level.MEDIUM
-        return Level.HIGH
 
 
 @dataclass
