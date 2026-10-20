@@ -1,7 +1,6 @@
 """Quota collectors, one per agent CLI.
 
-Each is a `base.Collector` that implements detect, fetch and parse; `collect()` runs them and returns a `Usage`,
-or a `Failure` if any of them went wrong.
+Each has a `NAME` and a `collect()` that returns a `Usage`, or a `Failure` if it went wrong.
 """
 
 from .agy import Antigravity

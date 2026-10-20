@@ -5,9 +5,8 @@ import re
 from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from ..cli import DETECT_TIMEOUT, find, run
-from .base import Collector
-from .model import Agent, Quota, Status, clamp_percent
+from .cli import find, run
+from .model import Agent, Failure, Quota, Status, Usage
 
 LINE_RE = re.compile(
     r"^Current (?P<window>session|week \(all models\)):\s*(?P<used>\d+(?:\.\d+)?)% used"
@@ -19,30 +18,40 @@ LINE_RE = re.compile(
 MONTHS = ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
 
 
-class Claude(Collector):
+class Claude:
     NAME = "Claude Code"
 
-    def detect(self):
+    def collect(self):
+        """Detect the agent, then fetch its quotas if it's logged in; a step that raises makes a Failure."""
+        step = "detect"
+        try:
+            agent = self._detect()
+            if not agent.usable:
+                return Usage(agent)
+            step = "fetch"
+            session, week = self._fetch()
+        except Exception as e:  # noqa: BLE001 - whatever a step raises becomes the agent's Failure
+            return Failure.of(self.NAME, step, e)
+        return Usage(agent, session, week)
+
+    def _detect(self):
         """Check `claude auth status --json`, which reports {"loggedIn": true, ...}."""
         if not find("claude"):
             return Agent(self.NAME, Status.ABSENT, usable=False)
-        proc = run("claude", "auth", "status", "--json", timeout=DETECT_TIMEOUT)
+        proc = run("claude", "auth", "status", "--json")
         try:
             logged_in = bool(json.loads(proc.stdout).get("loggedIn"))
         except (json.JSONDecodeError, AttributeError):  # not a JSON object: trust the exit code
             logged_in = proc.returncode == 0
         return Agent(self.NAME, Status.LOGGED_IN if logged_in else Status.LOGGED_OUT, usable=logged_in)
 
-    def fetch(self):
-        """Run `claude -p "/usage"`."""
-        return run("claude", "-p", "/usage", check=True).stdout.strip()
-
-    def parse(self, raw):
-        """Read the lines that start with "Current session" and "Current week"."""
+    def _fetch(self):
+        """Run `claude -p "/usage"` and read the lines that start with "Current session" and "Current week"."""
+        raw = run("claude", "-p", "/usage", check=True).stdout.strip()
         windows = {}
         for m in LINE_RE.finditer(raw):
             key = "session" if m["window"].lower() == "session" else "week"
-            windows[key] = Quota(left=clamp_percent(100 - float(m["used"])), reset=_parse_reset(m))
+            windows[key] = Quota.of(100 - float(m["used"]), _parse_reset(m))
         if not windows:
             raise RuntimeError(f"could not parse claude /usage output:\n{raw}")
         return windows.get("session"), windows.get("week")

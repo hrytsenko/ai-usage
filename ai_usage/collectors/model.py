@@ -30,6 +30,11 @@ class Quota:
     left: int  # percent of the limit left: 0 = exhausted, 100 = untouched
     reset: datetime | None  # in UTC
 
+    @classmethod
+    def of(cls, left, reset):
+        """Make a Quota from a raw percent left, rounded to an int within 0..100."""
+        return cls(max(0, min(100, round(left))), reset)
+
 
 @dataclass
 class Usage:
@@ -47,8 +52,8 @@ class Failure:
     name: str
     reason: str
 
-
-def clamp_percent(value):
-    """Round to an int percent within 0..100."""
-    return max(0, min(100, round(value)))
-
+    @classmethod
+    def of(cls, name, step, error):
+        """Make the Failure of the step that raised error, keeping the first line of its message."""
+        text = str(error).strip()
+        return cls(name, f"{step}: {text.splitlines()[0] if text else type(error).__name__}")

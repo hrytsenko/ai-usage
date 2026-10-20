@@ -1,11 +1,11 @@
-"""Detection and parsing of Claude Code output."""
+"""Collection of Claude Code quotas from its CLI output."""
 
 import subprocess
 import unittest
 from datetime import UTC, datetime
 from unittest import mock
 
-from ai_usage.collectors import Agent, Status
+from ai_usage.collectors import Agent, Status, Usage
 from ai_usage.collectors.claude import Claude
 
 # Trimmed `claude auth status --json` output when logged in, exit code 0.
@@ -13,28 +13,6 @@ LOGGED_IN_OUTPUT = '{"loggedIn": true}'
 
 # Trimmed `claude auth status --json` output when logged out, exit code 1.
 LOGGED_OUT_OUTPUT = '{"loggedIn": false}'
-
-
-def detect(path, stdout="", returncode=0):
-    """Run Claude.detect with `claude` found at path and `claude auth status` answering stdout."""
-    proc = subprocess.CompletedProcess([], returncode, stdout=stdout, stderr="")
-    with (
-        mock.patch("ai_usage.collectors.claude.find", return_value=path),
-        mock.patch("ai_usage.collectors.claude.run", return_value=proc),
-    ):
-        return Claude().detect()
-
-
-class DetectTest(unittest.TestCase):
-    def test_absent(self):
-        self.assertEqual(detect(None), Agent(Claude.NAME, Status.ABSENT, usable=False))
-
-    def test_logged_in(self):
-        self.assertEqual(detect("claude", LOGGED_IN_OUTPUT, 0), Agent(Claude.NAME, Status.LOGGED_IN, usable=True))
-
-    def test_logged_out(self):
-        self.assertEqual(detect("claude", LOGGED_OUT_OUTPUT, 1), Agent(Claude.NAME, Status.LOGGED_OUT, usable=False))
-
 
 # Trimmed `claude -p "/usage"` output.
 USAGE_OUTPUT = """\
@@ -50,15 +28,42 @@ class CapturedNow(datetime):
         return datetime(2026, 10, 6, 16, 0, tzinfo=UTC).astimezone(tz)
 
 
-class ParseTest(unittest.TestCase):
-    @mock.patch("ai_usage.collectors.claude.datetime", CapturedNow)
-    def test_parse(self):
-        session, week = Claude().parse(USAGE_OUTPUT)
+def collect(path, status="", returncode=0):
+    """Run Claude.collect with `claude` found at path, `claude auth status` answering status and `/usage` USAGE_OUTPUT."""
 
-        self.assertEqual(session.left, 92)  # 8% used
-        self.assertEqual(session.reset.isoformat(), "2026-10-06T18:29:00+00:00")  # Oct 6, 9:29pm
-        self.assertEqual(week.left, 96)  # 4% used
-        self.assertEqual(week.reset.isoformat(), "2026-10-10T10:59:00+00:00")  # Oct 10, 1:59pm
+    def run(name, *args, **kwargs):
+        if args[:1] == ("auth",):
+            return subprocess.CompletedProcess([], returncode, stdout=status, stderr="")
+        if args[:1] == ("-p",):
+            return subprocess.CompletedProcess([], 0, stdout=USAGE_OUTPUT, stderr="")
+        raise AssertionError(f"unexpected call: {name} {args}")
+
+    with (
+        mock.patch("ai_usage.collectors.claude.find", return_value=path),
+        mock.patch("ai_usage.collectors.claude.run", side_effect=run),
+        mock.patch("ai_usage.collectors.claude.datetime", CapturedNow),
+    ):
+        return Claude().collect()
+
+
+class CollectTest(unittest.TestCase):
+    def test_absent(self):
+        self.assertEqual(collect(None), Usage(Agent(Claude.NAME, Status.ABSENT, usable=False)))
+
+    def test_logged_out(self):
+        self.assertEqual(
+            collect("claude", LOGGED_OUT_OUTPUT, 1),
+            Usage(Agent(Claude.NAME, Status.LOGGED_OUT, usable=False)),
+        )
+
+    def test_logged_in(self):
+        usage = collect("claude", LOGGED_IN_OUTPUT, 0)
+
+        self.assertEqual(usage.agent, Agent(Claude.NAME, Status.LOGGED_IN, usable=True))
+        self.assertEqual(usage.session.left, 92)  # 8% used
+        self.assertEqual(usage.session.reset.isoformat(), "2026-10-06T18:29:00+00:00")  # Oct 6, 9:29pm
+        self.assertEqual(usage.week.left, 96)  # 4% used
+        self.assertEqual(usage.week.reset.isoformat(), "2026-10-10T10:59:00+00:00")  # Oct 10, 1:59pm
 
 
 if __name__ == "__main__":
