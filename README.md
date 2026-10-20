@@ -1,14 +1,14 @@
 # ai-usage
 
-Shows how much of the session (5-hour) and weekly quotas is left for Claude Code, Codex and Antigravity, in one table.
+Shows how much of the session (5-hour) and weekly quotas is left for Claude Code, Codex and Antigravity.
 
 It reads the quotas only through each agent's own CLI, and skips agents that aren't installed or logged in:
 
-| Agent       | Command                       |
-|-------------|-------------------------------|
-| Claude Code | `claude -p "/usage"`          |
-| Codex       | `codex app-server` (JSON-RPC) |
-| Antigravity | `agy -p "/usage"`             |
+| Agent       | Command               |
+|-------------|-----------------------|
+| Claude Code | `claude -p "/usage"`  |
+| Codex       | `codex app-server`    |
+| Antigravity | `agy -p "/usage"`     |
 
 ## Install
 
@@ -36,8 +36,6 @@ uv run python -m unittest  # test
 uv run python -m ai_usage  # run
 ```
 
-The tests parse real outputs captured from each CLI, so they also show what each one prints.
-
 ## Output
 
 ```
@@ -50,4 +48,4 @@ Antigravity  absent
 ```
 
 STATUS is `absent`, `installed` (when login can't be checked), `logged in`, `logged out` or `error` (with the failed step and reason).
-LEVEL is `high` from 40% left (green), `medium` from 15% (yellow), `low` above 0% and `exhausted` at 0% (both red).
+LEVEL is high from 40% left (green), medium from 15% (yellow), and low above 0% or exhausted at 0% (red).
