@@ -2,7 +2,7 @@
 
 import json
 
-from ..collectors import Failure
+from ..model import Failure
 
 
 class JsonReporter:

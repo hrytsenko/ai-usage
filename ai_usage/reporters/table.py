@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 from typing import ClassVar
 
-from ..collectors import Failure, Status
+from ..model import Failure, Status
 
 
 class TableReporter:

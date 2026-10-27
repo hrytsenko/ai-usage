@@ -7,8 +7,8 @@ import subprocess
 import unittest
 from unittest import mock
 
-from ai_usage.collectors import Agent, Status, Usage
 from ai_usage.collectors.codex import Codex
+from ai_usage.model import Agent, Status, Usage
 
 # Trimmed `codex login status` output when logged in, exit code 0.
 LOGGED_IN_OUTPUT = "Logged in using ChatGPT"

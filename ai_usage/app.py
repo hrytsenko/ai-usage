@@ -14,7 +14,8 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 
 from . import __version__
-from .collectors import COLLECTORS, Failure, Status
+from .collectors import COLLECTORS
+from .model import Failure, Status
 from .reporters import JsonReporter, TableReporter
 
 

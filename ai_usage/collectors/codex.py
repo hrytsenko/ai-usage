@@ -3,8 +3,8 @@
 import json
 from datetime import UTC, datetime
 
+from ..model import Agent, Failure, Quota, Status, Usage
 from .cli import find, run, start
-from .model import Agent, Failure, Quota, Status, Usage
 
 RATE_LIMITS_ID = 2  # request id of the rate-limit read, to pick out its reply
 
@@ -23,15 +23,13 @@ class Codex:
 
     def collect(self):
         """Detect the agent, then fetch its quotas if it's logged in; a step that raises makes a Failure."""
-        step = "detect"
         try:
             agent = self._detect()
             if not agent.usable:
                 return Usage(agent)
-            step = "fetch"
             session, week = self._fetch()
         except Exception as e:  # noqa: BLE001 - whatever a step raises becomes the agent's Failure
-            return Failure.of(self.NAME, step, e)
+            return Failure.of(self.NAME, e)
         return Usage(agent, session, week)
 
     def _detect(self):

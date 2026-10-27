@@ -1,4 +1,4 @@
-"""Shared result types for the collectors."""
+"""The model shared by the collectors and reporters: agents and their usage."""
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -53,7 +53,7 @@ class Failure:
     reason: str
 
     @classmethod
-    def of(cls, name, step, error):
-        """Make the Failure of the step that raised error, keeping the first line of its message."""
+    def of(cls, name, error):
+        """Make the Failure of an error, keeping the first line of its message."""
         text = str(error).strip()
-        return cls(name, f"{step}: {text.splitlines()[0] if text else type(error).__name__}")
+        return cls(name, text.splitlines()[0] if text else type(error).__name__)

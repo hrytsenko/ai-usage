@@ -2,8 +2,8 @@
 
 from datetime import datetime
 
+from ..model import Agent, Failure, Quota, Status, Usage
 from .cli import find, run
-from .model import Agent, Failure, Quota, Status, Usage
 
 GROUP = "gemini models"
 WINDOW_LABELS = {"five hour limit remaining": "session", "weekly limit remaining": "week"}
@@ -14,15 +14,13 @@ class Antigravity:
 
     def collect(self):
         """Detect the agent, then fetch its quotas if it's usable; a step that raises makes a Failure."""
-        step = "detect"
         try:
             agent = self._detect()
             if not agent.usable:
                 return Usage(agent)
-            step = "fetch"
             session, week = self._fetch()
         except Exception as e:  # noqa: BLE001 - whatever a step raises becomes the agent's Failure
-            return Failure.of(self.NAME, step, e)
+            return Failure.of(self.NAME, e)
         return Usage(agent, session, week)
 
     def _detect(self):

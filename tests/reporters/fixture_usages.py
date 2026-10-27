@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 
-from ai_usage.collectors import Agent, Failure, Quota, Status, Usage
+from ai_usage.model import Agent, Failure, Quota, Status, Usage
 
 # The local time zone and the current time.
 LOCAL = timezone(timedelta(hours=3))
@@ -30,5 +30,5 @@ USAGE_EXAMPLE = [
     Usage(Agent("Antigravity", Status.ABSENT, usable=False)),
 ]
 
-# A collector that failed at the fetch step.
-FAILURE_EXAMPLE = [Failure("Codex", "fetch: timed out")]
+# A collector that failed.
+FAILURE_EXAMPLE = [Failure("Codex", "timed out")]

@@ -49,5 +49,5 @@ Codex        logged in  session  ██████░░░░░░░░░�
 Antigravity  absent
 ```
 
-STATUS is `absent` (shown only with `--all`), `installed` (when login can't be checked), `logged in`, `logged out` or `error` (with the failed step and reason).
+STATUS is `absent` (shown only with `--all`), `installed` (when login can't be checked), `logged in`, `logged out` or `error` (with the reason).
 LEVEL is high from 40% left (green), medium from 15% (yellow), and low above 0% or exhausted at 0% (red).

@@ -8,13 +8,17 @@
 
 ## Decisions
 
+### Shared model
+
+`model.py` holds the types that collectors and reporters share. It describes agents and their usage, not how a collector gets them.
+
 ### Independent collectors
 
-Collectors must be independent. When different agents report status or quotas the same way, treat it as a coincidence and don't share code between their collectors. Generic helpers for running a CLI, as in `collectors/cli.py`, are fine to share.
+Collectors must be independent. When different agents report status or quotas the same way, treat it as a coincidence and don't share code between their collectors. Generic helpers for running a CLI, as in `collectors/cli.py`, are fine to share. Taking the same steps, detect then fetch, is a convenience, not an obligation: a collector may change its steps.
 
 ### Independent reporters
 
-Reporters must be independent. When different formats present usages the same way, such as the `error` status for a failure, treat it as a coincidence and don't share code between their reporters. The collector types, such as `Usage` and `Failure`, are their common input and are fine to use. Reporters report every usage they're given; choosing which ones to report, such as hiding absent agents, belongs to the app.
+Reporters must be independent. When different formats present usages the same way, such as the `error` status for a failure, treat it as a coincidence and don't share code between their reporters. Reporters report every usage they're given; choosing which ones to report, such as hiding absent agents, belongs to the app.
 
 ### Realistic CLI output in collector tests
 

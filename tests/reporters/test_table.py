@@ -19,7 +19,7 @@ Antigravity  absent
 
 FAILURE_TABLE = """\
 AGENT  STATUS  WINDOW  QUOTA  LEFT  LEVEL  RESET
-Codex  error   fetch: timed out
+Codex  error   timed out
 """
 
 

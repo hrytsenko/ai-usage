@@ -5,8 +5,8 @@ import unittest
 from datetime import UTC, datetime
 from unittest import mock
 
-from ai_usage.collectors import Agent, Status, Usage
 from ai_usage.collectors.claude import Claude
+from ai_usage.model import Agent, Status, Usage
 
 # Trimmed `claude auth status --json` output when logged in, exit code 0.
 LOGGED_IN_OUTPUT = '{"loggedIn": true}'

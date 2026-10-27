@@ -42,7 +42,7 @@ FAILURE_JSON = """\
 {
   "Codex": {
     "status": "error",
-    "error": "fetch: timed out"
+    "error": "timed out"
   }
 }
 """
