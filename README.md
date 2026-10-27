@@ -23,8 +23,9 @@ uv tool uninstall ai-usage                                 # remove
 ## Run
 
 ```sh
-ai-usage            # table
-ai-usage --json     # JSON
+ai-usage            # render results as a table
+ai-usage --json     # render results as JSON
+ai-usage --all      # include absent agents
 ai-usage --version
 ```
 
@@ -39,6 +40,7 @@ uv run python -m ai_usage  # run
 ## Output
 
 ```
+$ ai-usage --all
 AGENT        STATUS     WINDOW   QUOTA                 LEFT  LEVEL   RESET
 Claude Code  logged in  session  ███████████████░░░░░   73%  high    Tue Oct 06 19:50 (in 2h 59m)
                         week     ██░░░░░░░░░░░░░░░░░░   12%  low     Fri Oct 09 16:50 (in 2d 23h)
@@ -47,5 +49,5 @@ Codex        logged in  session  ██████░░░░░░░░░�
 Antigravity  absent
 ```
 
-STATUS is `absent`, `installed` (when login can't be checked), `logged in`, `logged out` or `error` (with the failed step and reason).
+STATUS is `absent` (shown only with `--all`), `installed` (when login can't be checked), `logged in`, `logged out` or `error` (with the failed step and reason).
 LEVEL is high from 40% left (green), medium from 15% (yellow), and low above 0% or exhausted at 0% (red).
