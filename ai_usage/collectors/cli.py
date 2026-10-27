@@ -9,7 +9,7 @@ PROCESS_TIMEOUT = 30  # seconds per CLI process
 
 
 def find(name):
-    """Return the CLI's path, or None if it's not on PATH."""
+    """Return the CLI's path, or None if it's not found."""
     # Windows: also finds .exe/.cmd shims, e.g. npm's codex.cmd.
     return shutil.which(name)
 
@@ -47,8 +47,8 @@ def start(name, *args, timeout=PROCESS_TIMEOUT):
 
 
 def _resolve(name):
-    """Return the CLI's path, raising if it's not on PATH."""
+    """Return the CLI's path, raising if it's not found."""
     path = find(name)
     if not path:
-        raise RuntimeError(f"'{name}' not found on PATH")
+        raise RuntimeError(f"'{name}' not found")
     return path

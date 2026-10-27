@@ -36,6 +36,8 @@ def main():
 
     reporter = JsonReporter() if args.json else TableReporter.for_stdout()
     reporter.report(usages)
+    if not usages:
+        print(f"{parser.prog}: no agents found; --all lists them", file=sys.stderr)
 
     failed = any(isinstance(u, Failure) for u in usages)
     sys.exit(1 if failed else 0)

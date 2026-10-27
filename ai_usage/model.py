@@ -8,8 +8,8 @@ from enum import StrEnum
 class Status(StrEnum):
     """What detection found about an agent."""
 
-    ABSENT = "absent"  # CLI not on PATH
-    INSTALLED = "installed"  # on PATH; the CLI can't report its login
+    ABSENT = "absent"  # agent not found
+    INSTALLED = "installed"  # agent found but can't report its login
     LOGGED_IN = "logged in"
     LOGGED_OUT = "logged out"
 
