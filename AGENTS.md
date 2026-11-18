@@ -3,7 +3,7 @@
 ## Workflow
 
 1. Write code for the Python version in `requires-python`, using its features.
-2. Check that the code passes `uv run ruff check` and `uv run python -m unittest`.
+2. Check that the code passes `uv run pre-commit run --all-files` and `uv run python -m unittest`.
 3. When a change touches the package, bump the minor version in `ai_usage/__init__.py`. Bump once per commit: if the version already differs from the last commit, leave it.
 
 ## Decisions

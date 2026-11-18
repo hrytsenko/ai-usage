@@ -32,9 +32,11 @@ ai-usage --version
 ## Develop
 
 ```sh
-uv run ruff check          # lint
-uv run python -m unittest  # test
-uv run python -m ai_usage  # run
+uv run ruff check                 # lint
+uv run python -m unittest         # test
+uv run python -m ai_usage         # run
+uv run pre-commit install         # install hooks
+uv run pre-commit run --all-files # run hooks
 ```
 
 ## Output
