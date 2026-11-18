@@ -14,7 +14,7 @@ Repository = "https://github.com/hrytsenko/ai-usage"
 ai-usage = "ai_usage.app:main"
 
 [dependency-groups]
-dev = ["pre-commit==4.7.0", "ruff==0.16.8"]
+dev = ["pre-commit==4.7.0", "ruff==0.17.4"]
 
 [build-system]
 requires = ["hatchling"]
